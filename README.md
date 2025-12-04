@@ -24,7 +24,7 @@
 6. Аналогично пользоваться остальными endpoints (краткое описание доступно в Swagger, а также ниже в этом файле)
 
 # Описание endpoints:
-1. Регистрация нового пользователя (не администратора)
+1. Регистрация нового пользователя (не администратора)\
 POST /api/auth/register
 
 {
@@ -33,33 +33,33 @@ POST /api/auth/register
   "password": "string (минимум 6 символов)"
 }
 
-2. Получение JWT-токена
+2. Получение JWT-токена\
 POST /api/auth/login
 
-{
-  "username": "admin",
-  "password": "admin123"
-}
+{\
+  "username": "admin",\
+  "password": "admin123"\
+}\
 
-Ответ:
-{
-  "token": "JWT токен",
-  "type": "Bearer",
-  "id": 1,
-  "username": "имя пользователя",
-  "email": "email пользователя",
-  "roles": ["ROLE_USER", "ROLE_ADMIN"]
-}
+Ответ:\
+{\
+  "token": "JWT токен",\
+  "type": "Bearer",\
+  "id": 1,\
+  "username": "имя пользователя",\
+  "email": "email пользователя",\
+  "roles": ["ROLE_USER", "ROLE_ADMIN"]\
+}\
 
-3. Создание новой задачи
-POST /api/tasks (требуется аутентификация)
-
-{
-  "title": "Название задачи",
-  "description": "Описание задачи",
-  "status": "PENDING | IN_PROGRESS | COMPLETED",
-  "groupId": 1  // опционально, ID группы
-}
+3. Создание новой задачи\
+POST /api/tasks (требуется аутентификация)\
+\
+{\
+  "title": "Название задачи",\
+  "description": "Описание задачи",\
+  "status": "PENDING | IN_PROGRESS | COMPLETED",\
+  "groupId": 1  // опционально, ID группы\
+}\
 
 4. Просмотр всех задач (для пользователя - только его задачи, для администратора - все задачи)
 GET /api/tasks (требуется аутентификация)
