@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tasks", schema = "public")
+@Table(name = "tasks")
 public class Task {
 
     @Id
@@ -28,7 +28,7 @@ public class Task {
     private TaskStatus status = TaskStatus.PENDING;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
+    @JoinColumn(name = "group_id")  // Важно: имя должно совпадать с именем в БД
     @JsonIgnore
     private Group group;
 

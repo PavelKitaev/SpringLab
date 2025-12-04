@@ -1,7 +1,8 @@
 package com.example.taskmanager.controller;
 
+import com.example.taskmanager.dto.CreateTaskDTO;
 import com.example.taskmanager.dto.TaskDTO;
-import com.example.taskmanager.model.Task;
+import com.example.taskmanager.dto.UpdateTaskDTO;
 import com.example.taskmanager.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,8 +28,8 @@ public class TaskController {
 
     @PostMapping
     @Operation(summary = "Create a new task")
-    public ResponseEntity<TaskDTO> createTask(@Valid @RequestBody Task task) {
-        TaskDTO createdTask = taskService.createTask(task);
+    public ResponseEntity<TaskDTO> createTask(@Valid @RequestBody CreateTaskDTO taskDTO) {
+        TaskDTO createdTask = taskService.createTask(taskDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
@@ -56,8 +57,9 @@ public class TaskController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a task")
-    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id, @Valid @RequestBody Task taskDetails) {
-        TaskDTO updatedTask = taskService.updateTask(id, taskDetails);
+    public ResponseEntity<TaskDTO> updateTask(@PathVariable Long id,
+                                              @Valid @RequestBody UpdateTaskDTO taskDTO) {
+        TaskDTO updatedTask = taskService.updateTask(id, taskDTO);
         return ResponseEntity.ok(updatedTask);
     }
 
@@ -66,5 +68,20 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{taskId}/group/{groupId}")
+    @Operation(summary = "Update task's group")
+    public ResponseEntity<TaskDTO> updateTaskGroup(@PathVariable Long taskId,
+                                                   @PathVariable Long groupId) {
+        TaskDTO updatedTask = taskService.updateTaskGroup(taskId, groupId);
+        return ResponseEntity.ok(updatedTask);
+    }
+
+    @DeleteMapping("/{taskId}/group")
+    @Operation(summary = "Remove task from group")
+    public ResponseEntity<TaskDTO> removeTaskFromGroup(@PathVariable Long taskId) {
+        TaskDTO updatedTask = taskService.updateTaskGroup(taskId, null);
+        return ResponseEntity.ok(updatedTask);
     }
 }
