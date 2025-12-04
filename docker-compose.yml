@@ -1,16 +1,44 @@
 
 services:
   postgres:
-    image: postgres:latest # Используем последнюю версию образа PostgreSQL
+    image: postgres:latest
     container_name: postgres_container
     environment:
-      POSTGRES_USER: taskuser     # Имя пользователя базы данных
+      POSTGRES_USER: taskuser           # Имя пользователя базы данных
       POSTGRES_PASSWORD: taskpassword   # Пароль пользователя
-      POSTGRES_DB: task_manager_db   # Название создаваемой базы данных
+      POSTGRES_DB: task_manager_db      # Название создаваемой базы данных
     ports:
-      - "5432:5432"           # Перенаправляем стандартный порт PostgreSQL внутри контейнера наружу
+      - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql # Монтируем объем хранения данных
+      - postgres_data:/var/lib/postgresql      # Монтируем объем хранения данных
+      - ./init-db:/docker-entrypoint-initdb.d  # для SQL скриптов инициализации
+    networks:
+      - taskmanager-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskmanager-app
+    ports:
+      - "8080:8080"
+    networks:
+      - taskmanager-network
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/task_manager_db
+      SPRING_DATASOURCE_USERNAME: taskuser
+      SPRING_DATASOURCE_PASSWORD: taskpassword
+      APP_JWT_SECRET: bXktc3VwZXItc2VjdXJpdHktand0LXNlY3JldC1rZXktZm9yLXNwcmluZy1ib290LWFwcGxpY2F0aW9u
+      APP_JWT_EXPIRATION: 86400000
+    depends_on:
+      - postgres
+
+networks:
+  taskmanager-network:
+    driver: bridge
 
 volumes:
-  pgdata:
+  postgres_data:
+    driver: local
+  app_logs:
+    driver: local
