@@ -1,0 +1,16 @@
+
+services:
+  postgres:
+    image: postgres:latest # Используем последнюю версию образа PostgreSQL
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: taskuser     # Имя пользователя базы данных
+      POSTGRES_PASSWORD: taskpassword   # Пароль пользователя
+      POSTGRES_DB: task_manager_db   # Название создаваемой базы данных
+    ports:
+      - "5432:5432"           # Перенаправляем стандартный порт PostgreSQL внутри контейнера наружу
+    volumes:
+      - pgdata:/var/lib/postgresql # Монтируем объем хранения данных
+
+volumes:
+  pgdata:
