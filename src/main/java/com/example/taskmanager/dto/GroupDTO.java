@@ -15,21 +15,10 @@ public class GroupDTO {
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     private String description;
 
+    private Long userId;
     private List<TaskDTO> tasks;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    // Конструкторы
-    public GroupDTO() {}
-
-    public GroupDTO(Long id, String name, String description,
-                    LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     // Геттеры и сеттеры
     public Long getId() { return id; }
@@ -40,6 +29,9 @@ public class GroupDTO {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
     public List<TaskDTO> getTasks() { return tasks; }
     public void setTasks(List<TaskDTO> tasks) { this.tasks = tasks; }

@@ -5,9 +5,15 @@ import com.example.taskmanager.dto.GroupDTO;
 import com.example.taskmanager.dto.TaskDTO;
 import com.example.taskmanager.model.Group;
 import com.example.taskmanager.model.Task;
+import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.GroupRepository;
 import com.example.taskmanager.repository.TaskRepository;
+import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.config.security.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,41 +27,96 @@ public class GroupService {
 
     private final GroupRepository groupRepository;
     private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public GroupService(GroupRepository groupRepository, TaskRepository taskRepository) {
+    public GroupService(GroupRepository groupRepository,
+                        TaskRepository taskRepository,
+                        UserRepository userRepository) {
         this.groupRepository = groupRepository;
         this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        return userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private boolean isAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
     }
 
     public GroupDTO createGroup(CreateGroupDTO groupDTO) {
+        User currentUser = getCurrentUser();
+
         Group group = new Group();
         group.setName(groupDTO.getName());
         group.setDescription(groupDTO.getDescription());
+        group.setUser(currentUser);
 
         Group savedGroup = groupRepository.save(group);
         return convertToDTO(savedGroup);
     }
 
     public List<GroupDTO> getAllGroups() {
-        return groupRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        User currentUser = getCurrentUser();
+
+        if (isAdmin()) {
+            // Админ видит все группы
+            return groupRepository.findAll().stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // Обычный пользователь видит только свои группы
+            return groupRepository.findByUserId(currentUser.getId()).stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     public Optional<GroupDTO> getGroupById(Long id) {
-        return groupRepository.findById(id)
-                .map(this::convertToDTO);
+        Group group = groupRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + id));
+
+        User currentUser = getCurrentUser();
+
+        // Проверяем права доступа
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to view this group");
+        }
+
+        return Optional.of(convertToDTO(group));
     }
 
     public Optional<GroupDTO> getGroupWithTasks(Long id) {
-        return groupRepository.findByIdWithTasks(id)
-                .map(this::convertToDTOWithTasks);
+        Group group = groupRepository.findByIdWithTasks(id)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + id));
+
+        User currentUser = getCurrentUser();
+
+        // Проверяем права доступа
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to view this group");
+        }
+
+        return Optional.of(convertToDTOWithTasks(group));
     }
 
     public GroupDTO updateGroup(Long id, CreateGroupDTO groupDTO) {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Group not found with id: " + id));
+
+        User currentUser = getCurrentUser();
+
+        // Проверяем права доступа
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to update this group");
+        }
 
         group.setName(groupDTO.getName());
         group.setDescription(groupDTO.getDescription());
@@ -66,7 +127,16 @@ public class GroupService {
 
     @Transactional
     public void deleteGroup(Long id) {
-        // Каскадное удаление настроено в сущности Group (orphanRemoval = true)
+        Group group = groupRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + id));
+
+        User currentUser = getCurrentUser();
+
+        // Проверяем права доступа
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to delete this group");
+        }
+
         groupRepository.deleteById(id);
     }
 
@@ -76,6 +146,18 @@ public class GroupService {
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
+
+        User currentUser = getCurrentUser();
+
+        // Проверяем права на группу
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to modify this group");
+        }
+
+        // Проверяем права на задачу
+        if (!task.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to modify this task");
+        }
 
         task.setGroup(group);
         taskRepository.save(task);
@@ -90,6 +172,18 @@ public class GroupService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
 
+        User currentUser = getCurrentUser();
+
+        // Проверяем права на группу
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to modify this group");
+        }
+
+        // Проверяем права на задачу
+        if (!task.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to modify this task");
+        }
+
         if (task.getGroup() != null && task.getGroup().getId().equals(groupId)) {
             task.setGroup(null);
             taskRepository.save(task);
@@ -99,7 +193,16 @@ public class GroupService {
     }
 
     public List<TaskDTO> getTasksByGroupId(Long groupId) {
-        // Используем обновленный метод репозитория
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found with id: " + groupId));
+
+        User currentUser = getCurrentUser();
+
+        // Проверяем права доступа
+        if (!group.getUser().getId().equals(currentUser.getId()) && !isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to view this group's tasks");
+        }
+
         List<Task> tasks = taskRepository.findByGroupId(groupId);
         return tasks.stream()
                 .map(this::convertTaskToDTO)
@@ -112,6 +215,7 @@ public class GroupService {
         dto.setId(group.getId());
         dto.setName(group.getName());
         dto.setDescription(group.getDescription());
+        dto.setUserId(group.getUserId());
         dto.setCreatedAt(group.getCreatedAt());
         dto.setUpdatedAt(group.getUpdatedAt());
         return dto;
@@ -133,6 +237,7 @@ public class GroupService {
         dto.setDescription(task.getDescription());
         dto.setStatus(task.getStatus());
         dto.setGroupId(task.getGroupId());
+        dto.setUserId(task.getUserId());
         dto.setCreatedAt(task.getCreatedAt());
         dto.setUpdatedAt(task.getUpdatedAt());
         return dto;
