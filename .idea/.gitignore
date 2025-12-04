@@ -2,4 +2,8 @@
 /shelf/
 /workspace.xml
 /pdgata/
-/build/
+/build/classes
+/build/generated
+/build/resources
+/build/tmp
+/build/resolvedMainClassName
