@@ -28,9 +28,14 @@ public class Task {
     private TaskStatus status = TaskStatus.PENDING;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")  // Важно: имя должно совпадать с именем в БД
+    @JoinColumn(name = "group_id")
     @JsonIgnore
     private Group group;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,14 +47,16 @@ public class Task {
     public Task() {
     }
 
-    public Task(String title, String description) {
+    public Task(String title, String description, User user) {
         this.title = title;
         this.description = description;
+        this.user = user;
     }
 
-    public Task(String title, String description, Group group) {
+    public Task(String title, String description, User user, Group group) {
         this.title = title;
         this.description = description;
+        this.user = user;
         this.group = group;
     }
 
@@ -64,56 +71,32 @@ public class Task {
     }
 
     // Геттеры и сеттеры
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public String getTitle() {
-        return title;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+    public TaskStatus getStatus() { return status; }
+    public void setStatus(TaskStatus status) { this.status = status; }
 
-    public String getDescription() {
-        return description;
-    }
+    public Group getGroup() { return group; }
+    public void setGroup(Group group) { this.group = group; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
-    public TaskStatus getStatus() {
-        return status;
-    }
+    public Long getGroupId() { return group != null ? group.getId() : null; }
 
-    public void setStatus(TaskStatus status) {
-        this.status = status;
-    }
+    public Long getUserId() { return user != null ? user.getId() : null; }
 
-    public Group getGroup() {
-        return group;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setGroup(Group group) {
-        this.group = group;
-    }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    // Геттер для groupId для удобства в DTO
-    public Long getGroupId() {
-        return group != null ? group.getId() : null;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
 }

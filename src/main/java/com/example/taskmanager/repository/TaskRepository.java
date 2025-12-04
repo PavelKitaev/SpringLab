@@ -16,4 +16,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT t FROM Task t WHERE t.group IS NULL")
     List<Task> findByGroupIsNull();
+
+    @Query("SELECT t FROM Task t WHERE t.user.id = :userId")
+    List<Task> findByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.group IS NULL")
+    List<Task> findByUserIdAndGroupIsNull(@Param("userId") Long userId);
 }
